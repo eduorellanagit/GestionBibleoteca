@@ -1,0 +1,9 @@
+# Cache de Python
+__pycache__/
+*.pyc
+
+# Base de datos local
+biblioteca.db
+
+# Configuracion del editor
+.vscode/
