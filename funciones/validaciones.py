@@ -1,4 +1,3 @@
-import os
 
 def func_pedir_opcion(minimo, maximo, mensaje = "Opcion: "):
 
@@ -23,11 +22,24 @@ def func_pedir_opcion(minimo, maximo, mensaje = "Opcion: "):
 
 
 
-def func_pedir_texto(mensaje, largo_max = 100):
+def func_mensaje_dato(nombre, actual = None, extra = ""):
+
+    if actual is None:
+        return f"Ingrese {nombre}{extra}: "
+
+    return f"Cambiar {nombre} [{actual}] por{extra}: "
+
+
+
+
+def func_pedir_texto(mensaje, largo_max = 100, actual = None):
 
     while True:
 
         valor = input(mensaje).strip()
+
+        if valor == "" and actual is not None:
+            return actual
 
         if valor == "0":
             return None
@@ -47,30 +59,36 @@ def func_pedir_texto(mensaje, largo_max = 100):
 
 
 
-def func_pedir_isbn(mensaje):
+def func_pedir_isbn(mensaje, actual = None):
 
     while True:
 
         valor = input(mensaje).strip()
+
+        if valor == "" and actual is not None:
+            return actual
 
         if valor == "0":
             return None
 
         limpio = valor.replace("-", "").replace(" ", "")
 
-        if (limpio.isascii() and limpio.isdigit()) and len(limpio) in (10, 13):
+        if (limpio.isascii() and limpio.isdigit()) and len(limpio) in (3, 5):
             return limpio
 
-        print("Error: ISBN invalido. Debe tener 10 o 13 digitos (se aceptan guiones).")
+        print("Error: ISBN invalido. Debe tener 3 o 5 digitos (se aceptan guiones).")
 
 
 
 
-def func_pedir_entero(mensaje, minimo, maximo):
+def func_pedir_entero(mensaje, minimo, maximo, actual = None):
 
     while True:
 
         valor = input(mensaje).strip()
+
+        if valor == "" and actual is not None:
+            return actual
 
         if valor == "0":
             return None
@@ -115,4 +133,3 @@ def func_cancelado():
 
 def func_pausar():
     input("\nPresiona Enter para continuar...")
-    os.system('cls' if os.name == 'nt' else 'clear')

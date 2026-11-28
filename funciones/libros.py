@@ -1,13 +1,14 @@
 from datetime import date
 
 from configuracion import consultas
-from funciones import categorias, formato, validaciones
+from funciones import autores, categorias, formato, validaciones
 
 
-def func_listar_libros(conn):
+def func_listar_libros(opcion = 2):
 
-    print("\n--- LISTADO DE LIBROS ---\n")
-    func_mostrar_libros(consultas.func_listar_libros(conn))
+    formato.func_limpiar_pantalla()
+    print("--- LISTADO DE LIBROS ---\n")
+    func_mostrar_libros(consultas.func_listar_libros(opcion))
 
 
 
@@ -30,75 +31,109 @@ def func_mostrar_libros(libros):
 
 
 
-def func_nuevo_libro(conn):
+def func_nuevo_libro():
 
-    print("\n--- NUEVO LIBRO (0 para cancelar en cualquier momento) ---")
+    formato.func_limpiar_pantalla()
+    print("--- NUEVO LIBRO (0 para cancelar en cualquier momento) ---")
 
-    if not consultas.func_listar_categorias(conn):
+    if not consultas.func_listar_categorias():
         print("\nPrimero tenes que crear al menos una categoria en Administrar categorias.")
         return
 
-    datos = func_pedir_datos_libro(conn)
+    if not consultas.func_listar_autores():
+        print("\nPrimero tenes que crear al menos un autor en Administrar autores.")
+        return
+
+    datos = func_pedir_datos_libro()
 
     if datos is None:
         validaciones.func_cancelado()
         return
 
-    titulo, autor, isbn, anio, stock, id_cat = datos
+    titulo, id_autor, isbn, anio, stock, id_cat = datos
 
-    consultas.func_insertar_libro(conn, titulo, autor, isbn, anio, stock, id_cat)
+    consultas.func_insertar_libro(titulo, id_autor, isbn, anio, stock, id_cat)
 
     print("\nExito: Libro guardado correctamente.")
 
 
 
 
-def func_modificar_libro(conn):
+def func_modificar_libro():
 
-    print("\n--- MODIFICAR LIBRO ---")
+    formato.func_limpiar_pantalla()
+    print("--- MODIFICAR LIBRO ---")
 
-    libro = func_pedir_libro_existente(conn)
+    libro = func_pedir_libro_existente()
 
     if libro is None:
         return
 
-    print("\nIngresa los nuevos datos (0 para cancelar, no se guarda nada)")
+    print("\nEnter = dejar el dato actual | 0 = cancelar (no se guarda nada)")
 
-    datos = func_pedir_datos_libro(conn, libro[0])
+    datos = func_pedir_datos_libro(libro)
 
     if datos is None:
         validaciones.func_cancelado()
         return
 
-    titulo, autor, isbn, anio, stock, id_cat = datos
+    titulo, id_autor, isbn, anio, stock, id_cat = datos
 
-    consultas.func_actualizar_libro(conn, libro[0], titulo, autor, isbn, anio, stock, id_cat)
+    consultas.func_actualizar_libro(libro[0], titulo, id_autor, isbn, anio, stock, id_cat)
 
     print("\nLibro modificado correctamente.")
 
 
 
 
-def func_pedir_datos_libro(conn, id_libro = 0):
+def func_pedir_datos_libro(libro = None):
 
-    titulo = validaciones.func_pedir_texto("\nTitulo: ", 100)
+    if libro is None:
+
+        id_libro = 0
+        titulo_act = None
+        autor_act = None
+        isbn_act = None
+        anio_act = None
+        stock_act = None
+        cat_act = None
+
+    else:
+
+        id_libro = libro[0]
+        titulo_act = libro[1]
+        autor_act = (libro[8], libro[2])
+        isbn_act = libro[3]
+        anio_act = libro[4]
+        stock_act = libro[5]
+        cat_act = (libro[6], libro[7])
+
+    print()
+
+    mensaje = validaciones.func_mensaje_dato("el titulo", titulo_act)
+
+    titulo = validaciones.func_pedir_texto(mensaje, 100, titulo_act)
 
     if titulo is None:
         return None
 
-    autor = validaciones.func_pedir_texto("Autor: ", 80)
+    id_autor = autores.func_elegir_autor(autor_act)
 
-    if autor is None:
+    if id_autor is None:
         return None
+
+    print()
 
     while True:
 
-        isbn = validaciones.func_pedir_isbn("ISBN (10 o 13 digitos): ")
+        mensaje = validaciones.func_mensaje_dato("el ISBN", isbn_act, " (3 o 5 digitos)")
+
+        isbn = validaciones.func_pedir_isbn(mensaje, isbn_act)
 
         if isbn is None:
             return None
 
-        if consultas.func_existe_isbn(conn, isbn, id_libro):
+        if consultas.func_existe_isbn(isbn, id_libro):
             print("Error: Ya existe un libro con ese ISBN.")
             continue
 
@@ -106,29 +141,36 @@ def func_pedir_datos_libro(conn, id_libro = 0):
 
     anio_actual = date.today().year
 
-    anio = validaciones.func_pedir_entero(f"Anio de publicacion (1000-{anio_actual}): ", 1000, anio_actual)
+    mensaje = validaciones.func_mensaje_dato("el año", anio_act, f" (868-{anio_actual})")
+
+    # El primer libro impreso conocido de la historia es el Sutra del Diamante,
+    # que fue creado oficialmente el 11 de mayo de 868 d.C. en China mediante xilografía. Segun Google
+
+    anio = validaciones.func_pedir_entero(mensaje, 868, anio_actual, anio_act)
 
     if anio is None:
         return None
 
-    stock = validaciones.func_pedir_entero("Stock (1-999): ", 1, 999)
+    mensaje = validaciones.func_mensaje_dato("el stock", stock_act, " (1-200)")
+
+    stock = validaciones.func_pedir_entero(mensaje, 1, 200, stock_act)
 
     if stock is None:
         return None
 
-    id_cat = categorias.func_elegir_categoria(conn)
+    id_cat = categorias.func_elegir_categoria(cat_act)
 
     if id_cat is None:
         return None
 
-    return titulo, autor, isbn, anio, stock, id_cat
+    return titulo, id_autor, isbn, anio, stock, id_cat
 
 
 
 
-def func_pedir_libro_existente(conn):
+def func_pedir_libro_existente():
 
-    libros = consultas.func_listar_libros(conn)
+    libros = consultas.func_listar_libros()
 
     print()
 
@@ -148,7 +190,7 @@ def func_pedir_libro_existente(conn):
             validaciones.func_cancelado()
             return None
 
-        libro = consultas.func_obtener_libro(conn, id_libro)
+        libro = consultas.func_obtener_libro(id_libro)
 
         if libro is not None:
             return libro
@@ -158,20 +200,21 @@ def func_pedir_libro_existente(conn):
 
 
 
-def func_eliminar_libro(conn):
+def func_eliminar_libro():
 
-    print("\n--- ELIMINAR LIBRO ---")
+    formato.func_limpiar_pantalla()
+    print("--- ELIMINAR LIBRO ---")
 
-    libro = func_pedir_libro_existente(conn)
+    libro = func_pedir_libro_existente()
 
     if libro is None:
         return
 
-    if not validaciones.func_confirmar(f"\nEliminar el libro '{libro[1]}' de {libro[2]}?"):
+    if not validaciones.func_confirmar(f"\nEliminar el libro [{libro[1]}] de [{libro[2]}]?"):
         validaciones.func_cancelado()
         return
 
-    consultas.func_eliminar_libro(conn, libro[0])
+    consultas.func_eliminar_libro(libro[0])
 
     print("\nLibro eliminado correctamente.")
 
@@ -180,9 +223,10 @@ def func_eliminar_libro(conn):
 
 # --- BUSQUEDAS ---
 
-def func_buscar_por_titulo(conn):
+def func_buscar_por_titulo():
 
-    print("\n--- BUSCAR POR TITULO ---\n")
+    formato.func_limpiar_pantalla()
+    print("--- BUSCAR POR TITULO ---\n")
 
     texto = validaciones.func_pedir_texto("Texto a buscar (0 para cancelar): ", 100)
 
@@ -192,33 +236,35 @@ def func_buscar_por_titulo(conn):
 
     print()
 
-    func_mostrar_libros(consultas.func_buscar_libros_por_titulo(conn, texto))
+    func_mostrar_libros(consultas.func_buscar_libros_por_titulo(texto))
 
 
 
 
-def func_buscar_por_autor(conn):
+def func_buscar_por_autor():
 
-    print("\n--- BUSCAR POR AUTOR ---\n")
+    formato.func_limpiar_pantalla()
+    print("--- BUSCAR POR AUTOR ---")
 
-    texto = validaciones.func_pedir_texto("Texto a buscar (0 para cancelar): ", 80)
+    id_autor = autores.func_elegir_autor()
 
-    if texto is None:
+    if id_autor is None:
         validaciones.func_cancelado()
         return
 
     print()
 
-    func_mostrar_libros(consultas.func_buscar_libros_por_autor(conn, texto))
+    func_mostrar_libros(consultas.func_buscar_libros_por_autor(id_autor))
 
 
 
 
-def func_buscar_por_categoria(conn):
+def func_buscar_por_categoria():
 
-    print("\n--- BUSCAR POR CATEGORIA ---")
+    formato.func_limpiar_pantalla()
+    print("--- BUSCAR POR CATEGORIA ---")
 
-    id_cat = categorias.func_elegir_categoria(conn)
+    id_cat = categorias.func_elegir_categoria()
 
     if id_cat is None:
         validaciones.func_cancelado()
@@ -226,5 +272,4 @@ def func_buscar_por_categoria(conn):
 
     print()
 
-    func_mostrar_libros(consultas.func_buscar_libros_por_categoria(conn, id_cat))
-
+    func_mostrar_libros(consultas.func_buscar_libros_por_categoria(id_cat))

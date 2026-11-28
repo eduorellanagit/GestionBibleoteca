@@ -4,11 +4,12 @@ from configuracion import consultas, consultas_reportes
 from funciones import formato, validaciones
 
 
-def func_ver_reporte (conn):
+def func_ver_reporte():
 
-    print("\n--- REPORTE DE LIBROS ---\n")
+    formato.func_limpiar_pantalla()
+    print("--- REPORTE DE LIBROS ---\n")
 
-    libros = consultas.func_listar_libros(conn)
+    libros = consultas.func_listar_libros()
 
     if not libros:
         print("No hay libros cargados para generar el reporte.")
@@ -27,32 +28,29 @@ def func_ver_reporte (conn):
         print(linea)
 
     print(f"\nTotal de titulos: {len(libros)}")
-
     print(f"Total de ejemplares (stock): {total_stock}")
 
     if not validaciones.func_confirmar("\nGuardar este reporte?"):
         print("\nEl reporte no se guardo.")
         return
 
-    consultas_reportes.func_insertar_reporte (
-
-        conn, ahora.year, ahora.month, f"{ahora:%Y-%m-%d}", f"{ahora:%H:%M}",
-        len(libros), total_stock, libros
-
-        )
+    consultas_reportes.func_insertar_reporte(
+        ahora.year, ahora.month, f"{ahora:%Y-%m-%d}", f"{ahora:%H:%M}",
+        len(libros), total_stock, libros)
 
     print("\nReporte guardado correctamente.")
 
 
 
 
-def func_buscar_reporte (conn):
+def func_buscar_reporte():
 
-    print("\n--- BUSCAR REPORTE (0 para cancelar) ---\n")
+    formato.func_limpiar_pantalla()
+    print("--- BUSCAR REPORTE (0 para cancelar) ---\n")
 
     anio_actual = datetime.now().year
 
-    anio = validaciones.func_pedir_entero(f"Anio (2000-{anio_actual}): ", 2000, anio_actual)
+    anio = validaciones.func_pedir_entero(f"Año (2025-{anio_actual}): ", 2000, anio_actual)
 
     if anio is None:
         validaciones.func_cancelado()
@@ -64,7 +62,7 @@ def func_buscar_reporte (conn):
         validaciones.func_cancelado()
         return
 
-    reportes = consultas_reportes.func_buscar_reportes(conn, anio, mes)
+    reportes = consultas_reportes.func_buscar_reportes(anio, mes)
 
     print()
 
@@ -84,9 +82,7 @@ def func_buscar_reporte (conn):
 
     while reporte is None:
 
-        id_rep = validaciones.func_pedir_entero (
-            "ID del reporte para ver el detalle (0 para volver): ", 1, 999999999
-        )
+        id_rep = validaciones.func_pedir_entero("ID del reporte para ver el detalle (0 para volver): ", 1, 999999999)
 
         if id_rep is None:
             return
@@ -99,17 +95,18 @@ def func_buscar_reporte (conn):
         if reporte is None:
             print("Error: Ese ID no esta en la lista.")
 
-    func_mostrar_detalle_reporte(conn, reporte)
+    func_mostrar_detalle_reporte(reporte)
 
 
 
 
-def func_mostrar_detalle_reporte(conn, reporte):
+def func_mostrar_detalle_reporte(reporte):
 
-    print(f"\n--- REPORTE {reporte[0]} ---")
+    formato.func_limpiar_pantalla()
+    print(f"--- REPORTE {reporte[0]} ---")
     print(f"Fecha: {reporte[1]}   Hora: {reporte[2]}\n")
 
-    detalle = consultas_reportes.func_listar_detalle_reporte(conn, reporte[0])
+    detalle = consultas_reportes.func_listar_detalle_reporte(reporte[0])
 
     for linea in formato.func_lineas_tabla_libros(detalle):
         print(linea)
